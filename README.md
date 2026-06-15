@@ -33,7 +33,7 @@ JStackLight avoids these issues by using primitive arrays directly.
 ## Installation
 
 1. Download the jar file from the releases
-2. Open Intellij and load your project'
+2. Open Intellij IDEA and load your project'
 3. Go to Project Structure -> Modules -> Dependencies
 4. Press the + and add the jar file
 5. Import it in the project by typing `import com.xJavaFlamex.JStackLight.*;`
@@ -118,3 +118,22 @@ Benchmark: Push + Pop operations on a stack with 10,000 elements.
 | `IntStack (Safe)` | ***1.4M ops/ms*** |
 | `FastUtil IntArrayList` | ***0.9M ops/ms*** |
 | `Eclipse MutableIntStack` | ***0.6M ops/ms*** |
+
+### Notes
+- Results may vary depending on hardware, JVM version, and benchmark methodology.
+- Unsafe operations skip safety checks and are intended for performance-critical code.
+- Safe operations include bounds and capacity validation while remaining highly competitive with other primitive collections.
+- The Benchmarks were done using JMH with 5 Warmups 10 Iterations and 2 Forks
+
+---
+
+## Future Additions
+
+1. `ObjectStack<T>`
+2. `CharStack`
+
+---
+
+## License
+
+This project is licensed under the MIT License.
