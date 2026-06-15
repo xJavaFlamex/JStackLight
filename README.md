@@ -4,7 +4,7 @@ A lightweight, high-performance primitive stack library for Java designed to eli
 
 ---
 
-## 🚀 Why JStackLight?
+## Why JStackLight?
 
 Java’s standard stack-like structures (such as `ArrayDeque<Integer>`) use boxed types, which introduce:
 
@@ -19,47 +19,30 @@ JStackLight avoids these issues by using primitive arrays directly.
 ## ⚡ Features
 
 - Primitive stacks (no boxing/unboxing)
-  - `IntStack`
-  - `LongStack`
-  - `FloatStack`
-  - `DoubleStack`
-
 - Fixed-capacity stacks (no resizing)
-  - `FixedIntStack`
-  - `FixedLongStack`
-  - `FixedFloatStack`
-  - `FixedDoubleStack`
-
 - Dynamic resizing stacks (auto-growing arrays)
 - LIFO iteration support
-- Optional unsafe methods for maximum performance
-- No external dependencies
+- Unsafe API for maximum performance
+- Safe API for predictability and error handling
 - Lightweight and fast
-- Simple and easy-to-use API
+- Simple and easy-to-use
 
 ---
 
-## 📦 Installation
+## Installation
 
-Download the source files and include them in your project:
-
-- `IntStack.java`
-- `LongStack.java`
-- `FloatStack.java`
-- `DoubleStack.java`
-- `FixedIntStack.java`
-- `FixedLongStack.java`
-- `FixedFloatStack.java`
-- `FixedDoubleStack.java`
-
-Place them inside your Java project source folder.
+1. Download the jar file from the releases
+2. Open Intellij and go to your project'
+3. Go to Project Structure -> Modules -> Dependencies
+4. Press the + and add the jar file
+5. Import it in the project by typing `import com.xJavaFlamex.JStackLight.*;`
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```java
-IntStack stack = new IntStack();
+IntStack stack = new IntStack(32);
 
 stack.push(10);
 stack.push(20);
@@ -67,3 +50,8 @@ stack.push(30);
 
 System.out.println(stack.pop());  // 30
 System.out.println(stack.peek()); // 20
+System.out.println(stack.capacity()); // 32
+```
+
+---
+
