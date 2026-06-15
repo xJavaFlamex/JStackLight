@@ -122,6 +122,14 @@ Use only when correctness is already guaranteed by surrounding code.
 
 ## Benchmarks
 
+> Note: 
+
+### Configuration
+- Warmup: 5 Iterations
+- Measurement: 10 Iterations
+- Forks: 2
+- Mode: Throughput
+
 Benchmark: Push + Pop operations on a stack with 100 and 10,000 elements.
 
 *The stacks **were** pre-resized*
@@ -140,28 +148,6 @@ Benchmark: Push + Pop operations on a stack with 100 and 10,000 elements.
 | `IntStack (Safe)` | ***150 ops/ms*** | 10000 |
 | `ArrayDeque<Integer>` | ***45 ops/ms*** | 10000 |
 | `Eclipse MutableIntStack` | ***50 ops/ms*** | 10000 |
-
-### Analysis
-
-**JStackLight (Unsafe)**
-
-Provides the highest throughput due to removal of safety checks and minimal overhead. Best suited for performance-critical code where capacity is guaranteed externally.
-
-**JStackLight (Safe)**
-
-Offers a balance between correctness and performance. Slight overhead is introduced due to bounds checking and capacity management.
-
-**FastUtil**
-
-fastutil demonstrates strong performance in large workloads due to highly optimized primitive array structures.
-
-**Eclipse Collections**
-
-Eclipse Collections prioritizes general-purpose flexibility, resulting in slightly higher overhead in stack-specific workloads.
-
-**ArrayDeque**
-
-Standard JDK implementation using boxed Integer values, introducing allocation and boxing overhead.
 
 ### Benchmark Code
 
@@ -258,7 +244,6 @@ public class App {
 - Results may vary depending on hardware, JVM version, and benchmark methodology.
 - Unsafe operations skip safety checks and are intended for performance-critical code.
 - Safe operations include bounds and capacity validation while remaining highly competitive with other primitive collections.
-- The Benchmarks were done using JMH with 5 Warmups 10 Iterations and 2 Forks
 
 ---
 
