@@ -16,7 +16,7 @@ JStackLight avoids these issues by using primitive arrays directly.
 
 ---
 
-## ⚡ Features
+## Features
 
 - Primitive stacks (no boxing/unboxing)
 - Fixed-capacity stacks (no resizing)
@@ -26,13 +26,14 @@ JStackLight avoids these issues by using primitive arrays directly.
 - Safe API for predictability and error handling
 - Lightweight and fast
 - Simple and easy-to-use
+- Fail-fast iterator
 
 ---
 
 ## Installation
 
 1. Download the jar file from the releases
-2. Open Intellij and go to your project'
+2. Open Intellij and load your project'
 3. Go to Project Structure -> Modules -> Dependencies
 4. Press the + and add the jar file
 5. Import it in the project by typing `import com.xJavaFlamex.JStackLight.*;`
@@ -55,3 +56,65 @@ System.out.println(stack.capacity()); // 32
 
 ---
 
+## API Overview
+
+### Safe Operations
+
+| Method | Description |
+|----------|-------------|
+| `push(int item)` | Pushes an item onto the stack. |
+| `pushAll(int... items)` | Pushes multiple items onto the stack. |
+| `pop()` | Removes and returns the top item. |
+| `pop(int depth)` | Removes and returns multiple items from the top as an array. |
+| `peek()` | Returns the top item without removing it. |
+| `peek(int depth)` | Returns an item at a given depth from the top (`0` = top). |
+
+### Unsafe Operations
+
+| Method | Description |
+|----------|-------------|
+| `pushUnsafe(int item)` | Pushes an item without validation or capacity checks. |
+| `pushAllUnsafe(int... items)` | Pushes multiple items without validation or capacity checks. |
+| `popUnsafe()` | Removes and returns the top item without checking if the stack is empty. |
+| `popUnsafe(int depth)` | Removes and returns multiple items without validation. |
+| `peekUnsafe()` | Returns the top item without validation. |
+| `peekUnsafe(int depth)` | Returns an item at a given depth without validation. |
+
+### General Operations
+
+| Method | Description |
+|----------|-------------|
+| `size()` | Returns the number of elements in the stack. |
+| `isEmpty()` | Returns `true` if the stack is empty. |
+| `capacity()` | Returns the current backing-array capacity. |
+| `clear()` | Removes all elements from the stack. |
+| `wipe()` | Removes all elements and clears the backing array. |
+| `contains(int item)` | Checks whether the stack contains the specified item. |
+| `searchFromTop(int item)` | Searches for an item starting from the top of the stack. |
+| `toArray()` | Returns the stack contents as an array (top → bottom). |
+| `iterator()` | Iterates through stack elements from top to bottom. |
+| `toString()` | Returns a string representation of the stack. |
+| `ensureCapacity(int newCapacity)` | Makes sure that the needed capacity is met (Only in dynamic stacks) |
+| `trimToSize()` | Trims the stack to its current size to reduce memory usage (Only in dynamic stacks) |
+
+---
+
+## Benchmarks
+
+Benchmark: Push + Pop operations on a stack with 10,000 elements.
+
+*The stacks **were** pre-resized*
+| Implementation | Throughput |
+|----------------|------------|
+| `IntStack (Unsafe)` | ***1.7M ops/ms*** |
+| `IntStack (Safe)` | ***1.4M ops/ms*** |
+| `FastUtil IntArrayList` | ***1.7M ops/ms*** |
+| `Eclipse MutableIntStack` | ***0.6M ops/ms*** |
+
+*The stacks **were not** pre-resized*
+| Implementation | Throughput |
+|----------------|------------|
+| `IntStack (Unsafe)` | ***1.7M ops/ms*** |
+| `IntStack (Safe)` | ***1.4M ops/ms*** |
+| `FastUtil IntArrayList` | ***0.9M ops/ms*** |
+| `Eclipse MutableIntStack` | ***0.6M ops/ms*** |
