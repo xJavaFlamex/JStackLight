@@ -1,6 +1,6 @@
 # JStackLight
 
-A lightweight, high-performance primitive stack library for Java designed to eliminate boxing overhead and provide fast stack operations using array-backed implementations.
+A lightweight, easy-to-use, low-allocation primitive stack for Java designed for hot loops and performance-critical systems.
 
 ---
 
@@ -12,7 +12,12 @@ Java’s standard stack-like structures (such as `ArrayDeque<Integer>`) use boxe
 - Boxing / unboxing overhead
 - Reduced performance in tight loops
 
-JStackLight avoids these issues by using primitive arrays directly.
+JStackLight:
+
+- Reduces boxing overhead
+- Minimizes GC pressure
+- Provides predictable and stable performance
+- Provides fast O(1) operations
 
 ---
 
@@ -46,7 +51,7 @@ Fixed (fixed capacity)
 ## Installation
 
 1. Download the jar file from the releases
-2. Open Intellij IDEA and load your project'
+2. Open IntelliJ IDEA and load your project
 3. Go to Project Structure -> Modules -> Dependencies
 4. Press the + and add the jar file
 5. Import it in the project by typing `import com.xJavaFlamex.JStackLight.*;`
@@ -82,7 +87,9 @@ System.out.println(stack.capacity()); // 16
 | `peek()` | Returns the top item without removing it. |
 | `peek(int depth)` | Returns an item at a given depth from the top (`0` = top). |
 
-### Unsafe Operations
+### Unchecked Operations
+
+*These methods skip validation to provide max performance*
 
 | Method | Description |
 |----------|-------------|
@@ -110,140 +117,257 @@ System.out.println(stack.capacity()); // 16
 | `ensureCapacity(int newCapacity)` | Makes sure that the needed capacity is met (Only in dynamic stacks) |
 | `trimToSize()` | Trims the stack to its current size to reduce memory usage (Only in dynamic stacks) |
 
-### Unsafe API
-
-The unsafe API (`pushUnsafe()`, `popUnsafe()` ect.) is used for max performance and it achives that by removing error handling.
-
-*DISCLAIMER*
-
-Use only when correctness is already guaranteed by surrounding code.
+> *DISCLAIMER*
+> 
+> Use the unchecked API only when correctness is already guaranteed by surrounding code.
 
 ---
 
 ## Benchmarks
 
-> Note: 
+The benchmarks were executed using JMH
 
 ### Configuration
+- Mode: Average Time
 - Warmup: 5 Iterations
 - Measurement: 10 Iterations
 - Forks: 2
-- Mode: Throughput
 
-Benchmark: Push + Pop operations on a stack with 100 and 10,000 elements.
+### Rules
 
-*The stacks **were** pre-resized*
-| Implementation | Throughput | Elements |
-|----------------|------------|----------|
-| `IntStack (Unsafe)` | ***31.0k ops/ms*** | 100 |
-| `FastUtil IntArrayList` | ***24.0k ops/ms*** | 100 |
-| `IntStack (Safe)` | ***12.0k ops/ms*** | 100 |
-| `ArrayDeque<Integer>` | ***5.0k ops/ms*** | 100 |
-| `Eclipse MutableIntStack` | ***4.0k ops/ms*** | 100 |
+- Pre-sized data structures to remove resizing bias
+- Each benchmark executes full stack workloads (push/pop loops) to simulate realistic usage patterns.
+- Blackhole is used where required to prevent dead-code elimination
 
-| Implementation | Throughput | Elements |
-|----------------|------------|----------|
-| `IntStack (Unsafe)` | ***670 ops/ms*** | 10000 |
-| `FastUtil IntArrayList` | ***471 ops/ms*** | 10000 |
-| `IntStack (Safe)` | ***150 ops/ms*** | 10000 |
-| `ArrayDeque<Integer>` | ***45 ops/ms*** | 10000 |
-| `Eclipse MutableIntStack` | ***50 ops/ms*** | 10000 |
+### Results (*ns/op*)
+
+#### 100 Elements
+
+| Operation | ArrayDeque<Integer> | FastUtil | JStackLight (Safe) | JStackLight (Unsafe) |
+| --------- | ------------------- | -------- | ------------------ | -------------------- |
+| push      | 91.7                | 24.3     | 43.0               | 22.9                 |
+| pop       | 161.2               | 39.1     | 49.4               | 31.0                 |
+| peek      | 97.8                | 24.1     | 23.3               | 23.2                 |
+| push+pop  | 161.1               | 39.2     | 74.4               | 31.0                 |
+
+
+#### 10000 Elements
+
+| Operation | ArrayDeque<Integer> | FastUtil | JStackLight (Safe) | JStackLight (Unsafe) |
+| --------- | ------------------- | -------- | ------------------ | -------------------- |
+| push      | 13488               | 298.9    | 2810.3             | 292.6                |
+| pop       | 19099               | 2071.6   | 3014.5             | 1458.9               |
+| peek      | 14058               | 266.2    | 291.6              | 299.1                |
+| push+pop  | 19488               | 2044.7   | 6484.1             | 1440.9               |
+
+
+
+### Notes
+- Results may vary depending on hardware, JVM version, and benchmark methodology.
+- `ArrayDeque<Integer>` is slower due to boxing overhead.
+- `FastUtil` represents a high-performance primitive baseline.
+- `JStackLight` Unsafe provides maximum throughput by removing validation checks.
+- `JStackLight` Safe includes bounds checking and fail-fast behavior, which introduces overhead but ensures correctness.
 
 ### Benchmark Code
 
+```java
 package org.example;
 
-```java
 import com.xJavaFlamex.JStackLight.IntStack;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import org.eclipse.collections.api.factory.primitive.IntStacks;
-import org.eclipse.collections.api.stack.primitive.MutableIntStack;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 10, time = 1)
 @Fork(2)
 @State(Scope.Thread)
 public class App {
-
     @Param({"100", "10000"})
     public int size;
 
-    private IntStack myStack;
+    private IntStack stack;
     private IntArrayList fastutil;
-    private MutableIntStack eclipse;
     private ArrayDeque<Integer> deque;
-    
+
     @Setup(Level.Invocation)
     public void setup() {
-        myStack = new IntStack(size);
+        stack = new IntStack(size);
         fastutil = new IntArrayList(size);
-        eclipse = IntStacks.mutable.empty();
         deque = new ArrayDeque<>(size);
     }
-    
+
     @Benchmark
-    public void jstack_safe(Blackhole bh) {
+    public void pushSafe() {
         for (int i = 0; i < size; i++) {
-            myStack.push(i);
-        }
-        for (int i = 0; i < size; i++) {
-            bh.consume(myStack.pop());
+            stack.push(i);
         }
     }
-    
+
     @Benchmark
-    public void jstack_unsafe(Blackhole bh) {
+    public void pushUnsafe() {
         for (int i = 0; i < size; i++) {
-            myStack.pushUnsafe(i);
-        }
-        for (int i = 0; i < size; i++) {
-            bh.consume(myStack.popUnsafe());
+            stack.pushUnsafe(i);
         }
     }
-    
+
     @Benchmark
-    public void fastutil(Blackhole bh) {
+    public void pushFastUtil() {
         for (int i = 0; i < size; i++) {
             fastutil.add(i);
         }
+    }
+
+    @Benchmark
+    public void pushArrayDeque() {
+        for (int i = 0; i < size; i++) {
+            deque.push(i);
+        }
+    }
+
+    @Benchmark
+    public void popSafe(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            stack.pushUnsafe(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            bh.consume(stack.pop());
+        }
+    }
+
+    @Benchmark
+    public void popUnsafe(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            stack.pushUnsafe(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            bh.consume(stack.popUnsafe());
+        }
+    }
+
+    @Benchmark
+    public void popFastUtil(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            fastutil.add(i);
+        }
+
         for (int i = 0; i < size; i++) {
             bh.consume(fastutil.removeInt(fastutil.size() - 1));
         }
     }
-    
+
     @Benchmark
-    public void eclipse(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            eclipse.push(i);
-        }
-        for (int i = 0; i < size; i++) {
-            bh.consume(eclipse.pop());
-        }
-    }
-    
-    @Benchmark
-    public void arrayDeque(Blackhole bh) {
+    public void popArrayDeque(Blackhole bh) {
+
         for (int i = 0; i < size; i++) {
             deque.push(i);
         }
+
+        for (int i = 0; i < size; i++) {
+            bh.consume(deque.pop());
+        }
+    }
+
+    @Benchmark
+    public void peekSafe(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            stack.pushUnsafe(i);
+        }
+
+        bh.consume(stack.peek());
+    }
+
+    @Benchmark
+    public void peekUnsafe(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            stack.pushUnsafe(i);
+        }
+
+        bh.consume(stack.peekUnsafe());
+    }
+
+    @Benchmark
+    public void peekFastUtil(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            fastutil.add(i);
+        }
+
+        bh.consume(fastutil.getInt(fastutil.size() - 1));
+    }
+
+    @Benchmark
+    public void peekArrayDeque(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            deque.push(i);
+        }
+
+        bh.consume(deque.peek());
+    }
+
+    @Benchmark
+    public void pushPopSafe(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            stack.push(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            bh.consume(stack.pop());
+        }
+    }
+
+    @Benchmark
+    public void pushPopUnsafe(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            stack.pushUnsafe(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            bh.consume(stack.popUnsafe());
+        }
+    }
+
+    @Benchmark
+    public void pushPopFastUtil(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            fastutil.add(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            bh.consume(fastutil.removeInt(fastutil.size() - 1));
+        }
+    }
+
+    @Benchmark
+    public void pushPopArrayDeque(Blackhole bh) {
+
+        for (int i = 0; i < size; i++) {
+            deque.push(i);
+        }
+
         for (int i = 0; i < size; i++) {
             bh.consume(deque.pop());
         }
     }
 }
 ```
-
-### Notes
-- Results may vary depending on hardware, JVM version, and benchmark methodology.
-- Unsafe operations skip safety checks and are intended for performance-critical code.
-- Safe operations include bounds and capacity validation while remaining highly competitive with other primitive collections.
 
 ---
 
